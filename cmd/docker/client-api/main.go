@@ -32,7 +32,7 @@ func main() {
 	maxOpenConn := 3
 
 	rpgc := repository.PGConfig{
-		Host:               os.Getenv("DB_URL"),
+		Host:               os.Getenv("DATABASE_URL"),
 		Port:               rport,
 		User:               os.Getenv("DB_USER"),
 		Password:           os.Getenv("DB_PASSWD"),
