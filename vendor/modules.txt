@@ -1,0 +1,29 @@
+# github.com/DATA-DOG/go-sqlmock v1.3.3
+## explicit
+github.com/DATA-DOG/go-sqlmock
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/google/uuid v1.2.0
+## explicit
+github.com/google/uuid
+# github.com/jinzhu/gorm v1.9.16
+## explicit
+github.com/jinzhu/gorm
+github.com/jinzhu/gorm/dialects/postgres
+# github.com/jinzhu/inflection v1.0.0
+github.com/jinzhu/inflection
+# github.com/lib/pq v1.3.0
+github.com/lib/pq
+github.com/lib/pq/hstore
+github.com/lib/pq/oid
+github.com/lib/pq/scram
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/stretchr/testify v1.5.1
+## explicit
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# github.com/wiseco/go-lib v0.0.0-20210114172332-bdb3c65b92a9
+## explicit
+# gopkg.in/yaml.v2 v2.3.0
+gopkg.in/yaml.v2
