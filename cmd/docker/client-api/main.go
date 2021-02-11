@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 )
 
 func main() {
@@ -17,9 +16,9 @@ func main() {
 
 	l.Info("### Starting up client api ###")
 
-	rport, err := strconv.Atoi(os.Getenv("DB_PORT"))
+	rport, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
-		l.PanicD("Unable to read CORE_DB_READ_PORT var", log.Fields{"err": err.Error()})
+		l.PanicD("Unable to read PORT var", log.Fields{"err": err.Error()})
 	}
 
 	sslModeCoreDB := os.Getenv("DB_SSL_MODE")
@@ -27,20 +26,13 @@ func main() {
 		sslModeCoreDB = repository.SSLModeRequire
 	}
 
-	connMaxLife := 4 * time.Minute
-	maxIdleConn := 2
-	maxOpenConn := 3
-
 	rpgc := repository.PGConfig{
-		Host:               os.Getenv("DATABASE_URL"),
-		Port:               rport,
-		User:               os.Getenv("DB_USER"),
-		Password:           os.Getenv("DB_PASSWD"),
-		DBName:             os.Getenv("DB_NAME"),
-		SSLMode:            sslModeCoreDB,
-		SetConnMaxLifetime: &connMaxLife,
-		SetMaxOpenConns:    &maxOpenConn,
-		SetMaxIdleConns:    &maxIdleConn,
+		Host:     os.Getenv("DATABASE_URL"),
+		Port:     rport,
+		User:     os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWD"),
+		DBName:   os.Getenv("DB_NAME"),
+		SSLMode:  sslModeCoreDB,
 	}
 
 	rdb, err := repository.NewPGConnection(rpgc)
@@ -48,10 +40,9 @@ func main() {
 		l.PanicD("Error getting read connection", log.Fields{"err": err.Error()})
 	}
 
-	c := repository.NewCuder(rdb)
 	f := repository.NewFinder(rdb)
 
-	srv := service.NewGeolocationService(l, c, f)
+	srv := service.NewGeolocationService(l, f)
 	cntrl := controller.NewController(l, srv)
 	router := registerRoutes(cntrl, l)
 

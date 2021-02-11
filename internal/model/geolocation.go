@@ -8,6 +8,7 @@ import (
 type Geolocation struct {
 	ID           uuid.UUID
 	IP           string
+	Country      string
 	CountryCode  string
 	City         string
 	Latitude     string
@@ -17,6 +18,6 @@ type Geolocation struct {
 	ModifiedAt   time.Time `sql:"DEFAULT:current_timestamp"`
 }
 
-func (p Geolocation) TableName() string {
+func (p *Geolocation) TableName() string {
 	return "geolocation"
 }

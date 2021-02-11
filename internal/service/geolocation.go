@@ -12,13 +12,12 @@ type GeoLocationService interface {
 }
 type geolocation struct {
 	l      log.Logger
-	cuder  repository.Cuder
 	finder repository.Finder
 }
 
-func NewGeolocationService(l log.Logger, c repository.Cuder, f repository.Finder) GeoLocationService {
+func NewGeolocationService(l log.Logger, f repository.Finder) GeoLocationService {
 	return &geolocation{
-		l, c, f,
+		l, f,
 	}
 }
 
