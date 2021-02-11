@@ -13,15 +13,15 @@ $$ language 'plpgsql';
 -- +goose StatementEnd
 
 CREATE TABLE geolocation (
-                       id                          UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
-                       ip                          TEXT NOT NULL UNIQUE,
-                       country_code                TEXT NOT NULL,
-                       country                     TEXT NOT NULL,
-                       city                        TEXT NOT NULL,
-                       latitude                    TEXT NOT NULL,
-                       longitude                   TEXT NOT NULL,
-                       created_at                     TIMESTAMP with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                       modified_at                    TIMESTAMP with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+                       id                          UUID PRIMARY KEY NOT NULL,
+                       ip                          TEXT NOT NULL UNIQUE DEFAULT '',
+                       country_code                TEXT NOT NULL DEFAULT '',
+                       country                     TEXT NOT NULL DEFAULT '',
+                       city                        TEXT NOT NULL DEFAULT '',
+                       latitude                    TEXT NOT NULL DEFAULT '',
+                       longitude                   TEXT NOT NULL DEFAULT '',
+                       created_at                  TIMESTAMP with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       modified_at                  TIMESTAMP with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX index_ip ON geolocation(ip);
