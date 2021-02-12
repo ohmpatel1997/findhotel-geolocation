@@ -55,7 +55,7 @@ func main() {
 func registerRoutes(clientCntrl controller.ClientController, l log.Logger) router.Router {
 	r := router.NewBasicRouter()
 
-	r.Route(clientCntrl.GetAPIVersionPath("/ip"), func(r router.Router) {
+	r.Route(clientCntrl.GetAPIVersionPath("/ip-info"), func(r router.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 			clientCntrl.GetGeolocationData(w, r)
 		})
