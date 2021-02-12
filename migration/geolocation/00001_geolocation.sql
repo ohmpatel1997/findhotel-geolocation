@@ -20,6 +20,7 @@ CREATE TABLE geolocation (
                        city                        TEXT NOT NULL DEFAULT '',
                        latitude                    TEXT NOT NULL DEFAULT '',
                        longitude                   TEXT NOT NULL DEFAULT '',
+                       mystery_value               TEXT NOT NULL DEFAULT '',
                        created_at                  TIMESTAMP with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        modified_at                  TIMESTAMP with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -31,6 +32,6 @@ CREATE TRIGGER update_geolocation_modified BEFORE UPDATE ON geolocation FOR EACH
 DROP TRIGGER IF EXISTS update_geolocation_modified on geolocation;
 
 DROP INDEX index_ip;
-DROP TABLE email;
+DROP TABLE geolocation;
 
 DROP FUNCTION IF EXISTS update_modified_column;

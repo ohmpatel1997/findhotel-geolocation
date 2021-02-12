@@ -3,6 +3,7 @@ package service
 import (
 	"bufio"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/common"
@@ -22,16 +23,18 @@ type ParserService interface {
 }
 
 type parser struct {
-	l     log.Logger
-	f     *os.File
-	cuder repository.Cuder
+	l      log.Logger
+	f      *os.File
+	cuder  repository.Cuder
+	finder repository.Finder
 }
 
-func NewParser(l log.Logger, f *os.File, c repository.Cuder) ParserService {
+func NewParser(l log.Logger, f *os.File, c repository.Cuder, finder repository.Finder) ParserService {
 	return &parser{
-		l:     l,
-		f:     f,
-		cuder: c,
+		l:      l,
+		f:      f,
+		cuder:  c,
+		finder: finder,
 	}
 }
 
@@ -67,10 +70,13 @@ func (p *parser) ParseAndStore() (float64, int64, int64, error) {
 	var invalidDataCountFromSecondPass int64 = 0
 	var validDataCount int64 = 0
 
-	outPutChan := make(chan model.Geolocation, 500)
+	outPutChan := make(chan model.Geolocation, 10000)
+	savToDbChan := make(chan model.Geolocation, 10000)
 	var wg sync.WaitGroup
+	var wg2 sync.WaitGroup
 
-	go p.ExtractAndLoad(outPutChan, &invalidDataCountFromSecondPass, &validDataCount, &wg)
+	go p.ExtractAndLoad(outPutChan, &invalidDataCountFromSecondPass, &validDataCount, &wg, savToDbChan, &wg2)
+	go p.SaveToDB(savToDbChan, &wg2)
 
 	for {
 		buf := linesPool.Get().([]byte)
@@ -93,7 +99,8 @@ func (p *parser) ParseAndStore() (float64, int64, int64, error) {
 
 	close(outPutChan)
 
-	wg.Wait()
+	wg.Wait()  //wait ExtractAndLoad
+	wg2.Wait() //wait until saving data to db
 
 	return time.Since(timeThen).Seconds(), invalidDataCountFromFirstPass + invalidDataCountFromSecondPass, validDataCount, nil
 }
@@ -123,7 +130,8 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 
 	for i := 0; i < (noOfThread); i++ {
 
-		wg2.Add(1)
+		wg2.Add(1) //span out locally
+
 		go func(textSlice []string) {
 			for _, text := range textSlice { //first stage of cleaning
 
@@ -170,7 +178,7 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 				}
 
 				if !invalidData {
-					wg.Add(1)
+					wg.Add(1)            //increment counter for data processing
 					outPutChan <- geoloc //send to output chan
 				}
 
@@ -186,12 +194,13 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 }
 
 //will extract the data, checks the validity and load it into database
-func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCount *int64, validCount *int64, wg *sync.WaitGroup) {
+func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCount *int64, validCount *int64, wg *sync.WaitGroup, saveToDbChan chan<- model.Geolocation, wg2 *sync.WaitGroup) {
 
 	visitedIP := make(map[string]bool)          // will keep track of already visited ip address
 	visitedCoordinates := make(map[string]bool) // will keep track of already visited coordinates
 
 	for data := range outPutChan { // second stage of cleaning
+		local_data := data
 		IPValid := common.IsIpv4Regex(data.IP)
 		if !IPValid {
 			*invalidCount++
@@ -242,8 +251,45 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 		visitedCoordinates[coordinates] = true
 		*validCount++
 
-		wg.Done()
-		//fmt.Println("data-->", data.IP, " | ", data.CountryCode, " | ", data.Country, " | ", data.City, " | ", data.Latitude, " | ", data.Longitude, " | ", data.MysteryValue)
-		//save to data
+		wg2.Add(1) //add count for saving data to db
+		saveToDbChan <- local_data
+
+		wg.Done() //decrement for process done
+	}
+
+	close(saveToDbChan) //once all data have been processed, close save to db chan
+}
+
+func (p *parser) SaveToDB(savChan <-chan model.Geolocation, wg2 *sync.WaitGroup) {
+	for data := range savChan {
+
+		local_data := data
+
+		go func() {
+			defer wg2.Done() //decrement after data is saved
+
+			_, found, err := p.finder.FindManaged(&local_data)
+
+			if err != nil {
+				p.l.ErrorD("failed to check data already exists", log.Fields{"data": local_data, "Error": err.Error()})
+			}
+
+			if found { //ignore the data if already there
+				return
+			}
+
+			local_data.ID, err = uuid.NewUUID()
+			if err != nil {
+				p.l.ErrorD("failed to store data", log.Fields{"data": local_data, "Error": err.Error()})
+
+				return
+			}
+			err = p.cuder.Insert(&local_data)
+			if err != nil {
+				p.l.ErrorD("failed to store data", log.Fields{"data": local_data, "Error": err.Error()})
+				return
+			}
+
+		}()
 	}
 }

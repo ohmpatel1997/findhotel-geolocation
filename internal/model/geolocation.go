@@ -13,7 +13,7 @@ type Geolocation struct {
 	City         string
 	Latitude     string
 	Longitude    string
-	MysteryValue string
+	MysteryValue string    `gorm:"mystery_value"`
 	CreatedAt    time.Time `sql:"DEFAULT:current_timestamp"`
 	ModifiedAt   time.Time `sql:"DEFAULT:current_timestamp"`
 }

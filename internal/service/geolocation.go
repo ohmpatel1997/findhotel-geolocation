@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
+	"github.com/ohmpatel1997/findhotel-geolocation/integration/router"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/model"
 )
 
 type GeoLocationService interface {
-	GetIPData(*GetRequest) (GeoLocationResponse, error)
+	GetIPData(*GetRequest) (GeoLocationResponse, *router.HttpError)
 }
 type geolocation struct {
 	l      log.Logger
@@ -21,25 +22,25 @@ func NewGeolocationService(l log.Logger, f repository.Finder) GeoLocationService
 	}
 }
 
-func (g *geolocation) GetIPData(request *GetRequest) (GeoLocationResponse, error) {
+func (g *geolocation) GetIPData(request *GetRequest) (GeoLocationResponse, *router.HttpError) {
 	var resp GeoLocationResponse
 
 	if len(request.IP) == 0 {
-		return resp, fmt.Errorf("empty id found")
+		return resp, router.NewHttpError("invalid ip", 400)
 	}
 
 	data, found, err := g.finder.FindManaged(&model.Geolocation{IP: request.IP})
 	if err != nil {
-		return resp, err
+		return resp, router.NewHttpError(err.Error(), 500)
 	}
 
 	if !found {
-		return resp, fmt.Errorf("no data found")
+		return resp, router.NewHttpError("not found", 404)
 	}
 
 	v, ok := data.(*model.Geolocation)
 	if !ok {
-		return resp, fmt.Errorf("can not able to type assert the response: %v", data)
+		return resp, router.NewHttpError(fmt.Sprintf("can not able to type assert the response: %v", data), 500)
 	}
 
 	return GeoLocationResponse{

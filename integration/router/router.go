@@ -143,6 +143,15 @@ type Response struct {
 	Status int
 }
 
+type HttpError struct {
+	Message string `json:"message"`
+	Status  int32  `json:"status"`
+}
+
+func NewHttpError(message string, status int32) *HttpError {
+	return &HttpError{message, status}
+}
+
 func RenderJSON(r Response) {
 	var j []byte
 	var err error
