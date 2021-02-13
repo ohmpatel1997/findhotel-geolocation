@@ -44,7 +44,7 @@ func (m *manager) FindDataByIP(ip string) (model.Geolocation, bool, error) {
 	}
 
 	v, ok := response.(*model.Geolocation)
-	if ok {
+	if !ok {
 		return resp, false, fmt.Errorf("can not able to type assert")
 	}
 

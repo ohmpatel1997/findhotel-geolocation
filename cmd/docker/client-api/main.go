@@ -16,11 +16,6 @@ func main() {
 
 	l.Info("### Starting up client api ###")
 
-	sslModeCoreDB := os.Getenv("DB_SSL_MODE")
-	if sslModeCoreDB == "" {
-		sslModeCoreDB = repository.SSLModeRequire
-	}
-
 	connStr := os.Getenv("DATABASE_URL")
 	if len(connStr) == 0 {
 		l.Panic("no conn string found")
