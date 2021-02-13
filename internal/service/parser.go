@@ -3,9 +3,9 @@ package service
 import (
 	"bufio"
 	"fmt"
-	"github.com/google/uuid"
+	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
+
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
-	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/common"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/model"
 	"io"
@@ -23,18 +23,16 @@ type ParserService interface {
 }
 
 type parser struct {
-	l      log.Logger
-	f      *os.File
-	cuder  repository.Cuder
-	finder repository.Finder
+	l       log.Logger
+	f       *os.File
+	manager model_manager.GeoLocationManager
 }
 
-func NewParser(l log.Logger, f *os.File, c repository.Cuder, finder repository.Finder) ParserService {
+func NewParser(l log.Logger, f *os.File, mn model_manager.GeoLocationManager) ParserService {
 	return &parser{
-		l:      l,
-		f:      f,
-		cuder:  c,
-		finder: finder,
+		l:       l,
+		f:       f,
+		manager: mn,
 	}
 }
 
@@ -183,7 +181,7 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 				}
 
 			}
-			wg2.Done()
+			wg2.Done() //done processing a chunk
 		}(logsSlice[i*chunkSize : int(math.Min(float64((i+1)*chunkSize), float64(len(logsSlice))))]) //prevent overflow
 	}
 
@@ -251,8 +249,8 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 		visitedCoordinates[coordinates] = true
 		*validCount++
 
-		wg2.Add(1) //add count for saving data to db
-		saveToDbChan <- local_data
+		wg2.Add(1)                 //add count for saving data to db
+		saveToDbChan <- local_data //push to save data to db
 
 		wg.Done() //decrement for process done
 	}
@@ -268,28 +266,11 @@ func (p *parser) SaveToDB(savChan <-chan model.Geolocation, wg2 *sync.WaitGroup)
 		go func() {
 			defer wg2.Done() //decrement after data is saved
 
-			_, found, err := p.finder.FindManaged(&local_data)
-
+			_, err := p.manager.UpsertGeolocation(&local_data)
 			if err != nil {
 				p.l.ErrorD("failed to check data already exists", log.Fields{"data": local_data, "Error": err.Error()})
-			}
-
-			if found { //ignore the data if already there
 				return
 			}
-
-			local_data.ID, err = uuid.NewUUID()
-			if err != nil {
-				p.l.ErrorD("failed to store data", log.Fields{"data": local_data, "Error": err.Error()})
-
-				return
-			}
-			err = p.cuder.Insert(&local_data)
-			if err != nil {
-				p.l.ErrorD("failed to store data", log.Fields{"data": local_data, "Error": err.Error()})
-				return
-			}
-
 		}()
 	}
 }

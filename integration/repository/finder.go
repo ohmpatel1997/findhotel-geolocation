@@ -1,14 +1,11 @@
 package repository
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 )
 
 type Finder interface {
-	Cache(time.Duration) Finder
 	FindByPKS(Model, ...interface{}) (Model, bool, error)
 	FindByPKSStrict(Model, ...interface{}) (Model, error)
 	FindManaged(Model) (Model, bool, error)
@@ -18,18 +15,11 @@ type Finder interface {
 }
 
 type finder struct {
-	cacheDuration time.Duration
-	db            *gorm.DB
+	db *gorm.DB
 }
 
 func NewFinder(db *gorm.DB) Finder {
 	return finder{db: db}
-}
-
-func (f finder) Cache(t time.Duration) Finder {
-	f.cacheDuration = t
-
-	return f
 }
 
 func (f finder) FindByPKS(m Model, pks ...interface{}) (Model, bool, error) {

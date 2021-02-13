@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
+	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/service"
 	"os"
 	"strconv"
@@ -33,7 +34,7 @@ func main() {
 	}
 
 	rpgc := repository.PGConfig{
-		Host:     os.Getenv("DATABASE_URL"),
+		Host:     os.Getenv("HOST"),
 		Port:     rport,
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWD"),
@@ -41,7 +42,7 @@ func main() {
 		SSLMode:  sslModeCoreDB,
 	}
 
-	rdb, err := repository.NewPGConnection(rpgc)
+	rdb, err := repository.NewPGConnection(&rpgc, nil)
 	if err != nil {
 		l.PanicD("Error getting read connection", log.Fields{"err": err.Error()})
 	}
@@ -49,7 +50,9 @@ func main() {
 	c := repository.NewCuder(rdb)
 	f := repository.NewFinder(rdb)
 
-	parserService := service.NewParser(l, file, c, f)
+	manager := model_manager.NewGeoLocationManager(l, c, f)
+	parserService := service.NewParser(l, file, manager)
+
 	timeTaken, invalid, validData, err := parserService.ParseAndStore()
 	if err != nil {
 		l.Error(err.Error())
