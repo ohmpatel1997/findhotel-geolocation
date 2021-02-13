@@ -20,7 +20,10 @@ func main() {
 		sslModeCoreDB = repository.SSLModeRequire
 	}
 
-	connStr := os.Getenv("DATABASE_URL")
+	connStr := "dbname=ohmpatel user=ohmpatel password=ohmpatel host=localhost sslmode=disable\n\n"
+	//os.Getenv("DATABASE_URL")
+
+	l.Info("connection string-->", connStr, "\n\n")
 	if len(connStr) == 0 {
 		l.Panic("no conn string found")
 	}
@@ -36,7 +39,7 @@ func main() {
 	cntrl := controller.NewController(l, srv)
 	router := registerRoutes(cntrl, l)
 
-	err = router.ListenAndServeTLS(os.Getenv("CONTAINER_LISTEN_PORT"), nil)
+	err = router.ListenAndServeTLS(os.Getenv("PORT"), nil)
 	if err != nil {
 		l.Panic(err.Error())
 	}

@@ -1,24 +1,23 @@
 package service
 
 import (
-	"fmt"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
-	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/router"
-	"github.com/ohmpatel1997/findhotel-geolocation/internal/model"
+	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
 )
 
 type GeoLocationService interface {
 	GetIPData(*GetRequest) (GeoLocationResponse, *router.HttpError)
 }
+
 type geolocation struct {
-	l      log.Logger
-	finder repository.Finder
+	l       log.Logger
+	manager model_manager.GeoLocationManager
 }
 
-func NewGeolocationService(l log.Logger, f repository.Finder) GeoLocationService {
+func NewGeolocationService(l log.Logger, mn model_manager.GeoLocationManager) GeoLocationService {
 	return &geolocation{
-		l, f,
+		l, mn,
 	}
 }
 
@@ -29,7 +28,7 @@ func (g *geolocation) GetIPData(request *GetRequest) (GeoLocationResponse, *rout
 		return resp, router.NewHttpError("invalid ip", 400)
 	}
 
-	data, found, err := g.finder.FindManaged(&model.Geolocation{IP: request.IP})
+	data, found, err := g.manager.FindDataByIP(request.IP)
 	if err != nil {
 		return resp, router.NewHttpError(err.Error(), 500)
 	}
@@ -38,17 +37,12 @@ func (g *geolocation) GetIPData(request *GetRequest) (GeoLocationResponse, *rout
 		return resp, router.NewHttpError("not found", 404)
 	}
 
-	v, ok := data.(*model.Geolocation)
-	if !ok {
-		return resp, router.NewHttpError(fmt.Sprintf("can not able to type assert the response: %v", data), 500)
-	}
-
 	return GeoLocationResponse{
-		IP:           v.IP,
-		CountryCode:  v.CountryCode,
-		City:         v.City,
-		Latitude:     v.Latitude,
-		Longitude:    v.Longitude,
-		MysteryValue: v.MysteryValue,
+		IP:           data.IP,
+		CountryCode:  data.CountryCode,
+		City:         data.City,
+		Latitude:     data.Latitude,
+		Longitude:    data.Longitude,
+		MysteryValue: data.MysteryValue,
 	}, nil
 }
