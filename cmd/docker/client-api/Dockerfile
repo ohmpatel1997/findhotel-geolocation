@@ -10,7 +10,7 @@ RUN apk update && \
 USER findhotel_user
 
 # Copy over the app files
-COPY ./main.go /app/
+COPY ./main /app/
 
 WORKDIR /app
 

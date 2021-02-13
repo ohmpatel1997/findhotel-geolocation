@@ -35,38 +35,45 @@ type PGConfig struct {
 	SetConnMaxLifetime *time.Duration
 }
 
-func NewPGConnection(pgc PGConfig) (*gorm.DB, error) {
-	var err error
+func NewPGConnection(pgc *PGConfig, connStr *string) (*gorm.DB, error) {
+	var err error = nil
+	dsn := ""
 
-	dsn, err := pgc.String()
+	if connStr != nil {
+		dsn = *connStr
+	} else if pgc != nil {
+		dsn, err = pgc.String()
+	} else {
+		return nil, fmt.Errorf("please specify DB configuration")
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
 	db, err := gorm.Open("postgres", dsn)
-
 	if err != nil {
 		return nil, err
 	}
 
-	if pgc.SetMaxOpenConns != nil {
-		db.DB().SetMaxOpenConns(*pgc.SetMaxOpenConns)
-	} else {
-		db.DB().SetMaxOpenConns(defaultSetMaxOpenConns)
-	}
+	if pgc != nil {
+		if pgc.SetMaxOpenConns != nil {
+			db.DB().SetMaxOpenConns(*pgc.SetMaxOpenConns)
+		} else {
+			db.DB().SetMaxOpenConns(defaultSetMaxOpenConns)
+		}
 
-	if pgc.SetMaxIdleConns != nil {
-		db.DB().SetMaxIdleConns(*pgc.SetMaxIdleConns)
-	} else {
-		db.DB().SetMaxIdleConns(defaultSetMaxIdleConns)
-	}
+		if pgc.SetMaxIdleConns != nil {
+			db.DB().SetMaxIdleConns(*pgc.SetMaxIdleConns)
+		} else {
+			db.DB().SetMaxIdleConns(defaultSetMaxIdleConns)
+		}
 
-	//Default for this is a lifetime conn
-	if pgc.SetConnMaxLifetime != nil {
-		db.DB().SetConnMaxLifetime(*pgc.SetConnMaxLifetime)
+		//Default for this is a lifetime conn
+		if pgc.SetConnMaxLifetime != nil {
+			db.DB().SetConnMaxLifetime(*pgc.SetConnMaxLifetime)
+		}
 	}
-
 	err = db.DB().Ping()
 
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/service"
 	"net/http"
 	"os"
-	"strconv"
 )
 
 func main() {
@@ -16,26 +15,17 @@ func main() {
 
 	l.Info("### Starting up client api ###")
 
-	rport, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		l.PanicD("Unable to read PORT var", log.Fields{"err": err.Error()})
-	}
-
 	sslModeCoreDB := os.Getenv("DB_SSL_MODE")
 	if sslModeCoreDB == "" {
 		sslModeCoreDB = repository.SSLModeRequire
 	}
 
-	rpgc := repository.PGConfig{
-		Host:     os.Getenv("DATABASE_URL"),
-		Port:     rport,
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWD"),
-		DBName:   os.Getenv("DB_NAME"),
-		SSLMode:  sslModeCoreDB,
+	connStr := os.Getenv("DATABASE_URL")
+	if len(connStr) == 0 {
+		l.Panic("no conn string found")
 	}
 
-	rdb, err := repository.NewPGConnection(rpgc)
+	rdb, err := repository.NewPGConnection(nil, &connStr)
 	if err != nil {
 		l.PanicD("Error getting read connection", log.Fields{"err": err.Error()})
 	}

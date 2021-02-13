@@ -15,11 +15,6 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-main
-cmd/docker/grpc/main
-cmd/docker/client-api/main
-cmd/docker/grpc/ssl
-
 .idea
 ssl
 *.json

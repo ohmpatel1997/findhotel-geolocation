@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/google/uuid"
+
+	//"github.com/google/uuid"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/common"
@@ -251,8 +253,8 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 		visitedCoordinates[coordinates] = true
 		*validCount++
 
-		wg2.Add(1) //add count for saving data to db
-		saveToDbChan <- local_data
+		wg2.Add(1)                 //add count for saving data to db
+		saveToDbChan <- local_data //push to save data to db
 
 		wg.Done() //decrement for process done
 	}
@@ -272,6 +274,7 @@ func (p *parser) SaveToDB(savChan <-chan model.Geolocation, wg2 *sync.WaitGroup)
 
 			if err != nil {
 				p.l.ErrorD("failed to check data already exists", log.Fields{"data": local_data, "Error": err.Error()})
+				return
 			}
 
 			if found { //ignore the data if already there
@@ -281,7 +284,6 @@ func (p *parser) SaveToDB(savChan <-chan model.Geolocation, wg2 *sync.WaitGroup)
 			local_data.ID, err = uuid.NewUUID()
 			if err != nil {
 				p.l.ErrorD("failed to store data", log.Fields{"data": local_data, "Error": err.Error()})
-
 				return
 			}
 			err = p.cuder.Insert(&local_data)

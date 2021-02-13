@@ -33,7 +33,7 @@ func main() {
 	}
 
 	rpgc := repository.PGConfig{
-		Host:     os.Getenv("DATABASE_URL"),
+		Host:     os.Getenv("HOST"),
 		Port:     rport,
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWD"),
@@ -41,7 +41,7 @@ func main() {
 		SSLMode:  sslModeCoreDB,
 	}
 
-	rdb, err := repository.NewPGConnection(rpgc)
+	rdb, err := repository.NewPGConnection(&rpgc, nil)
 	if err != nil {
 		l.PanicD("Error getting read connection", log.Fields{"err": err.Error()})
 	}
