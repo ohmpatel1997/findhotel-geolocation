@@ -21,10 +21,7 @@ func main() {
 		sslModeCoreDB = repository.SSLModeRequire
 	}
 
-	connStr := "dbname=ohmpatel user=ohmpatel password=ohmpatel host=localhost sslmode=disable\n\n"
-	//os.Getenv("DATABASE_URL")
-
-	l.Info("connection string-->", connStr, "\n\n")
+	connStr := os.Getenv("DATABASE_URL")
 	if len(connStr) == 0 {
 		l.Panic("no conn string found")
 	}
