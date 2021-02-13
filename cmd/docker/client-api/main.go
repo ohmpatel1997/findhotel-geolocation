@@ -5,6 +5,7 @@ import (
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/router"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/controller"
+	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/service"
 	"net/http"
 	"os"
@@ -34,8 +35,10 @@ func main() {
 	}
 
 	f := repository.NewFinder(rdb)
+	c := repository.NewCuder(rdb)
+	manager := model_manager.NewGeoLocationManager(l, c, f)
 
-	srv := service.NewGeolocationService(l, f)
+	srv := service.NewGeolocationService(l, manager)
 	cntrl := controller.NewController(l, srv)
 	router := registerRoutes(cntrl, l)
 

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
+	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/service"
 	"os"
 	"strconv"
@@ -49,7 +50,9 @@ func main() {
 	c := repository.NewCuder(rdb)
 	f := repository.NewFinder(rdb)
 
-	parserService := service.NewParser(l, file, c, f)
+	manager := model_manager.NewGeoLocationManager(l, c, f)
+	parserService := service.NewParser(l, file, manager)
+
 	timeTaken, invalid, validData, err := parserService.ParseAndStore()
 	if err != nil {
 		l.Error(err.Error())
