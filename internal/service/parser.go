@@ -183,7 +183,7 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 				}
 
 			}
-			wg2.Done()
+			wg2.Done() //done processing a chunk
 		}(logsSlice[i*chunkSize : int(math.Min(float64((i+1)*chunkSize), float64(len(logsSlice))))]) //prevent overflow
 	}
 
