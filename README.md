@@ -9,7 +9,7 @@ This project consistes of two cmponents:
 
 <h2>Prerequisite:</h2>
 
-1) The docker installed locally.
+1) The docker is installed locally.
 2) The latest version of Go. You can get it from https://golang.org/doc/install
 3) The `make` is installed.
 
