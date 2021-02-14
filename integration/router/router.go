@@ -23,14 +23,13 @@ const (
 type Router interface {
 	Delete(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
 	Get(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
-	Head(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
 	Patch(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
 	Post(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
 	Put(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
 	Options(string, http.HandlerFunc, ...func(http.Handler) http.Handler)
 
 	Route(string, func(r Router)) Router
-	Mount(string, http.Handler)
+
 	Handle(string, http.Handler)
 	HandleFunc(string, http.HandlerFunc)
 	With(middlewares ...func(http.Handler) http.Handler) Router
@@ -66,10 +65,6 @@ func (r router) Get(p string, h http.HandlerFunc, middlewares ...func(http.Handl
 	r.chi.With(middlewares...).Get(p, h)
 }
 
-func (r router) Head(p string, h http.HandlerFunc, middlewares ...func(http.Handler) http.Handler) {
-	r.chi.With(middlewares...).Head(p, h)
-}
-
 func (r router) Patch(p string, h http.HandlerFunc, middlewares ...func(http.Handler) http.Handler) {
 	r.chi.With(middlewares...).Patch(p, h)
 }
@@ -87,13 +82,13 @@ func (r router) Options(p string, h http.HandlerFunc, middlewares ...func(http.H
 }
 
 func (r router) Route(p string, fn func(r Router)) Router {
-	nr := router{chi.NewRouter()}
+	nr := router{chi.NewRouter()} //get new router
 
 	if fn != nil {
-		fn(nr)
+		fn(nr) //register the sub path
 	}
 
-	r.Mount(p, nr)
+	r.Mount(p, nr) //mount the new router
 	return nr
 }
 

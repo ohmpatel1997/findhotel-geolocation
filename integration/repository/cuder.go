@@ -14,15 +14,11 @@ type Model interface {
 type Models []Model
 
 type Cuder interface {
-	Transact(func(*gorm.DB) error) error
 	Insert(Model) error
-	InsertWithTX(*gorm.DB, Model) error
 	Update(Model, ColumnsAndValues) error
 	UpdateWithWhere(Model, ColumnsAndValues, FilterCondition) (int64, error)
-	UpdateWithTX(*gorm.DB, Model, ColumnsAndValues) error
 	Delete(Model) error
 	DeleteWithWhere(Model, FilterCondition) error
-	DeleteWithTX(*gorm.DB, Model) error
 }
 
 type cuder struct {
@@ -50,31 +46,8 @@ func NewCuder(db *gorm.DB) Cuder {
 	return cuder{db}
 }
 
-func (c cuder) Transact(txFunc func(*gorm.DB) error) (err error) {
-	tx := c.db.Begin()
-
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			err = fmt.Errorf("Panic: %v", p)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit().Error
-		}
-	}()
-
-	err = txFunc(tx)
-
-	return err
-}
-
 func (c cuder) Insert(m Model) error {
 	return c.db.Create(m).Error
-}
-
-func (cuder) InsertWithTX(tx *gorm.DB, m Model) error {
-	return tx.Create(m).Error
 }
 
 func (c cuder) Update(m Model, cvs ColumnsAndValues) error {
@@ -97,10 +70,6 @@ func (c cuder) UpdateWithWhere(m Model, cvs ColumnsAndValues, fc FilterCondition
 	return res.RowsAffected, res.Error
 }
 
-func (cuder) UpdateWithTX(tx *gorm.DB, m Model, cvs ColumnsAndValues) error {
-	return tx.Model(m).Updates(cvs).Error
-}
-
 func (c cuder) Delete(m Model) error {
 	return c.db.Delete(m).Error
 }
@@ -118,8 +87,4 @@ func (c cuder) DeleteWithWhere(m Model, fc FilterCondition) error {
 		db.Where(fc.RawFilter.RawSQLParams, fc.RawFilter.RawSQLParams)
 	}
 	return db.Delete(m).Error
-}
-
-func (cuder) DeleteWithTX(tx *gorm.DB, m Model) error {
-	return tx.Delete(m).Error
 }

@@ -73,18 +73,6 @@ type loggerOpts struct {
 //Option optional funcs passed into NewLogger
 type Option func(*loggerOpts)
 
-func SetOutput(i io.Writer) Option {
-	return func(opts *loggerOpts) {
-		opts.output = i
-	}
-}
-
-func SetFormat(f lr.Formatter) Option {
-	return func(opts *loggerOpts) {
-		opts.format = f
-	}
-}
-
 func (l logger) Debug(s string, fs ...interface{}) {
 	f := getFields(fs)
 	f = l.appendReportLocation(f)

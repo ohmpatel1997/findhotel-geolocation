@@ -7,7 +7,6 @@ import (
 
 type Finder interface {
 	FindByPKS(Model, ...interface{}) (Model, bool, error)
-	FindByPKSStrict(Model, ...interface{}) (Model, error)
 	FindManaged(Model) (Model, bool, error)
 	FindManyManaged(interface{}, map[string]interface{}) (interface{}, error)
 	FindRaw(interface{}, string, ...interface{}) (interface{}, bool, error)
@@ -64,12 +63,6 @@ func (f finder) FindByPKS(m Model, pks ...interface{}) (Model, bool, error) {
 	}
 
 	return m, true, nil
-}
-
-func (f finder) FindByPKSStrict(m Model, pks ...interface{}) (Model, error) {
-	err := f.db.First(m, pks).Error
-
-	return m, err
 }
 
 func (f finder) FindManaged(m Model) (Model, bool, error) {
