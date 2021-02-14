@@ -12,7 +12,6 @@ USER findhotel_user
 # Copy over the app files
 COPY ./main /app/
 
-EXPOSE 3000
 WORKDIR /app
 
 CMD ["./main"]
