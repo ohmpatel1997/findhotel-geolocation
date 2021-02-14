@@ -16,7 +16,7 @@ services:
     env_file:
       - .env
     volumes:
-      - data:/var/lib/ohmpatel/data/
+      - data:/var/lib/postgres/data/
     ports: ["5432:5432"]
     expose:
       - '5432'

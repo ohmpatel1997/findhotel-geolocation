@@ -40,6 +40,7 @@ func (g *geolocation) GetIPData(request *GetRequest) (GeoLocationResponse, *rout
 	return GeoLocationResponse{
 		IP:           data.IP,
 		CountryCode:  data.CountryCode,
+		Country:      data.Country,
 		City:         data.City,
 		Latitude:     data.Latitude,
 		Longitude:    data.Longitude,

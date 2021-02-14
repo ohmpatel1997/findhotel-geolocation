@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
@@ -11,15 +10,10 @@ import (
 )
 
 func main() {
-	args := os.Args
 
 	l := log.NewLogger()
 
-	if len(args) != 2 {
-		l.Panic("please only specify the data file location")
-	}
-
-	file, err := os.Open(args[1])
+	file, err := os.Open(os.Getenv("FILE_NAME"))
 	if err != nil {
 		l.Panic(err.Error())
 	}
@@ -48,7 +42,6 @@ func main() {
 		l.PanicD("Error getting read connection", log.Fields{"err": err.Error()})
 	}
 
-	fmt.Println("successfully connected===>", rdb)
 	c := repository.NewCuder(rdb)
 	f := repository.NewFinder(rdb)
 
