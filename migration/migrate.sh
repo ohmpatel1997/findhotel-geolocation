@@ -9,4 +9,4 @@ fi
 go build -o goose *.go
 
 # run commands
-./goose -dir "${1}" postgres "dbname=${RDS_DB_NAME} user=${RDS_USERNAME} password=${RDS_PASSWORD} host=${RDS_HOSTNAME} sslmode=disable" $2 $3
+./goose -dir "${1}" postgres "dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWD} host=${HOST} sslmode=disable" $2 $3

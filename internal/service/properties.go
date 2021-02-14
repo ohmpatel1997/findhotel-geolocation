@@ -6,6 +6,7 @@ type GetRequest struct {
 
 type GeoLocationResponse struct {
 	IP           string `json:"ip_address"`
+	Country      string `json:"country"`
 	CountryCode  string `json:"country_code"`
 	City         string `json:"city"`
 	Latitude     string `json:"latitude"`

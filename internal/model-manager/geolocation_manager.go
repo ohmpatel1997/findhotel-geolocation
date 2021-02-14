@@ -2,6 +2,7 @@ package model_manager
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/model"
@@ -66,6 +67,11 @@ func (m *manager) UpsertGeolocation(geolocation *model.Geolocation) (model.Geolo
 		}
 
 		return *v, nil
+	}
+
+	geolocation.ID, err = uuid.NewUUID()
+	if err != nil {
+		return resp, err
 	}
 
 	err = m.cuder.Insert(geolocation)

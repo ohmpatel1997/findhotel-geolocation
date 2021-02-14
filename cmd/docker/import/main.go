@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
@@ -47,6 +48,7 @@ func main() {
 		l.PanicD("Error getting read connection", log.Fields{"err": err.Error()})
 	}
 
+	fmt.Println("successfully connected===>", rdb)
 	c := repository.NewCuder(rdb)
 	f := repository.NewFinder(rdb)
 

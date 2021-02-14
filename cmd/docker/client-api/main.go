@@ -34,7 +34,7 @@ func main() {
 	cntrl := controller.NewController(l, srv)
 	router := registerRoutes(cntrl, l)
 
-	err = router.ListenAndServeTLS(os.Getenv("PORT"), nil)
+	err = router.ListenAndServeTLS(os.Getenv("CONTAINER_PORT"), nil)
 	if err != nil {
 		l.Panic(err.Error())
 	}
