@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if [ $2 = "down" ]; then
-    echo "Cannot run down, use down-to instead"
-    exit 1
-fi
 
 # Build golang package
 go build -o goose *.go
