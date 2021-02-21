@@ -13,7 +13,7 @@ func main() {
 
 	l := log.NewLogger()
 
-	file, err := os.Open(os.Getenv("FILE_NAME"))
+	file, err := os.Open("data_dump.csv")
 	if err != nil {
 		l.Panic(err.Error())
 	}

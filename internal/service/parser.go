@@ -3,11 +3,10 @@ package service
 import (
 	"bufio"
 	"fmt"
-	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
-
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/common"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/model"
+	model_manager "github.com/ohmpatel1997/findhotel-geolocation/internal/model-manager"
 	"io"
 	"math"
 	"os"
@@ -41,12 +40,7 @@ func (p *parser) ParseAndStore() (float64, int64, int64, error) {
 	timeThen := time.Now()
 
 	linesPool := sync.Pool{New: func() interface{} {
-		lines := make([]byte, 250*1024)
-		return lines
-	}}
-
-	stringPool := sync.Pool{New: func() interface{} {
-		lines := ""
+		lines := make([]byte, 500*1024)
 		return lines
 	}}
 
@@ -76,6 +70,8 @@ func (p *parser) ParseAndStore() (float64, int64, int64, error) {
 	go p.ExtractAndLoad(outPutChan, &invalidDataCountFromSecondPass, &validDataCount, &wg, savToDbChan, &wg2)
 	go p.SaveToDB(savToDbChan, &wg2)
 
+	//PrintMemUsage()
+
 	for {
 		buf := linesPool.Get().([]byte)
 
@@ -92,9 +88,10 @@ func (p *parser) ParseAndStore() (float64, int64, int64, error) {
 			buf = append(buf, nextUntillNewline...)
 		}
 
-		invalidDataCountFromFirstPass += ProcessChunk(buf, &linesPool, &stringPool, positions, outPutChan, &wg)
+		invalidDataCountFromFirstPass += ProcessChunk(buf, &linesPool, positions, outPutChan, &wg)
 	}
 
+	//PrintMemUsage()
 	close(outPutChan)
 
 	wg.Wait()  //wait ExtractAndLoad
@@ -103,12 +100,12 @@ func (p *parser) ParseAndStore() (float64, int64, int64, error) {
 	return time.Since(timeThen).Seconds(), invalidDataCountFromFirstPass + invalidDataCountFromSecondPass, validDataCount, nil
 }
 
-func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, positions map[int]string, outPutChan chan<- model.Geolocation, wg *sync.WaitGroup) int64 {
+func ProcessChunk(chunk []byte, linesPool *sync.Pool, positions map[int]string, outPutChan chan<- model.Geolocation, wg *sync.WaitGroup) int64 {
 
 	var wg2 sync.WaitGroup
 	var invalid int64 = 0
-	logs := stringPool.Get().(string)
-	logs = string(chunk)
+	//logs := stringPool.Get().(string)
+	logs := string(chunk)
 
 	//put back the old chunk
 	linesPool.Put(chunk)
@@ -116,7 +113,7 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 	logsSlice := strings.Split(logs, "\n")
 
 	//put back the slice
-	stringPool.Put(logs)
+	//stringPool.Put(logs)
 
 	chunkSize := 500
 	n := len(logsSlice)
@@ -182,12 +179,11 @@ func ProcessChunk(chunk []byte, linesPool *sync.Pool, stringPool *sync.Pool, pos
 
 			}
 			wg2.Done() //done processing a chunk
+
 		}(logsSlice[i*chunkSize : int(math.Min(float64((i+1)*chunkSize), float64(len(logsSlice))))]) //prevent overflow
 	}
 
 	wg2.Wait()
-	logsSlice = nil //free up the log slice
-
 	return invalid //return the invalid data count
 }
 
@@ -249,7 +245,9 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 		visitedCoordinates[coordinates] = true
 		*validCount++
 
-		wg2.Add(1)                 //add count for saving data to db
+		if *validCount%8191 == 0 {
+			wg2.Add(1) //add count for saving data to db
+		}
 		saveToDbChan <- local_data //push to save data to db
 
 		wg.Done() //decrement for process done
@@ -259,18 +257,24 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 }
 
 func (p *parser) SaveToDB(savChan <-chan model.Geolocation, wg2 *sync.WaitGroup) {
+	resultSlice := make([]model.Geolocation, 0, 8191) //8191, coz postgres supports 65535 parameters in bulk
 	for data := range savChan {
 
-		local_data := data
+		resultSlice = append(resultSlice, data)
+		if len(resultSlice) == 8191 {
+			var local_data []model.Geolocation
+			local_data = append(local_data, resultSlice...)
+			go func() {
+				defer wg2.Done()
+				err := p.manager.BulkInsert(local_data)
+				if err != nil {
+					p.l.ErrorD("Error occured while bulk insert", log.Fields{"data": local_data, "Error": err.Error()})
+					return
+				}
+			}()
 
-		go func() {
-			defer wg2.Done() //decrement after data is saved
+			resultSlice = resultSlice[:0]
+		}
 
-			_, err := p.manager.UpsertGeolocation(&local_data)
-			if err != nil {
-				p.l.ErrorD("failed to check data already exists", log.Fields{"data": local_data, "Error": err.Error()})
-				return
-			}
-		}()
 	}
 }

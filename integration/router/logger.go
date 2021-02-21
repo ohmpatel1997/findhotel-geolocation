@@ -14,7 +14,6 @@ const loggerKey = ctxKey("rlogger")
 
 type ctxKey string
 
-// Logger is a middleware used for all requests, see NewRouter
 func LoggerAndRecover(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		l := log.NewLogger()
@@ -63,24 +62,6 @@ func LoggerAndRecover(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
-}
-
-func GetLogger(r *http.Request) log.Logger {
-	ctx := r.Context()
-
-	l, ok := ctx.Value(loggerKey).(log.Logger)
-
-	//If the logger isn't present in the request(this should never happen)
-	//Let's add a logger to the request, but log a warning
-	if !ok {
-		l = log.NewLogger()
-
-		*r = *addLoggerContextToRequest(l, r)
-
-		l.WarnD("Logger missing from request context", log.Fields{"path": r.URL.Path})
-	}
-
-	return l
 }
 
 func addLoggerContextToRequest(l log.Logger, r *http.Request) *http.Request {

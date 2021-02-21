@@ -14,6 +14,7 @@ type Model interface {
 type Models []Model
 
 type Cuder interface {
+	Transact(func(*gorm.DB) error) error
 	Insert(Model) error
 	Update(Model, ColumnsAndValues) error
 	UpdateWithWhere(Model, ColumnsAndValues, FilterCondition) (int64, error)
@@ -87,4 +88,23 @@ func (c cuder) DeleteWithWhere(m Model, fc FilterCondition) error {
 		db.Where(fc.RawFilter.RawSQLParams, fc.RawFilter.RawSQLParams)
 	}
 	return db.Delete(m).Error
+}
+
+func (c cuder) Transact(txFunc func(*gorm.DB) error) (err error) {
+	tx := c.db.Begin()
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			err = fmt.Errorf("Panic: %v", p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit().Error
+		}
+	}()
+
+	err = txFunc(tx)
+
+	return err
 }

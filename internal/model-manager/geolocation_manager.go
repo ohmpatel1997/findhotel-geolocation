@@ -3,14 +3,17 @@ package model_manager
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jinzhu/gorm"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/log"
 	"github.com/ohmpatel1997/findhotel-geolocation/integration/repository"
 	"github.com/ohmpatel1997/findhotel-geolocation/internal/model"
+	"strings"
 )
 
 type GeoLocationManager interface {
 	FindDataByIP(ip string) (model.Geolocation, bool, error)
 	UpsertGeolocation(geolocation *model.Geolocation) (model.Geolocation, error)
+	BulkInsert(geolocation []model.Geolocation) error
 }
 
 type manager struct {
@@ -80,4 +83,31 @@ func (m *manager) UpsertGeolocation(geolocation *model.Geolocation) (model.Geolo
 	}
 
 	return *geolocation, nil
+}
+
+func (m *manager) BulkInsert(geolocation []model.Geolocation) error {
+	return m.cuder.Transact(func(db *gorm.DB) error {
+		valueStrings := []string{}
+		valueArgs := []interface{}{}
+
+		for _, geo := range geolocation {
+
+			valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?)")
+
+			id, _ := uuid.NewUUID()
+
+			valueArgs = append(valueArgs, id)
+			valueArgs = append(valueArgs, geo.IP)
+			valueArgs = append(valueArgs, geo.Country)
+			valueArgs = append(valueArgs, geo.Longitude)
+			valueArgs = append(valueArgs, geo.Latitude)
+			valueArgs = append(valueArgs, geo.MysteryValue)
+			valueArgs = append(valueArgs, geo.City)
+			valueArgs = append(valueArgs, geo.CountryCode)
+
+		}
+
+		stmt := fmt.Sprintf("INSERT INTO geolocation (id, ip, country, longitude, latitude, mystery_value, city, country_code) VALUES %s", strings.Join(valueStrings, ","))
+		return db.Exec(stmt, valueArgs...).Error
+	})
 }
