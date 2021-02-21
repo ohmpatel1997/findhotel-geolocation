@@ -17,6 +17,10 @@ import (
 	"time"
 )
 
+const (
+	BulkSize = 8191
+)
+
 type ParserService interface {
 	ParseAndStore() (float64, int64, int64, error)
 }
@@ -245,7 +249,7 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 		visitedCoordinates[coordinates] = true
 		*validCount++
 
-		if *validCount%8191 == 0 {
+		if *validCount%BulkSize == 0 {
 			wg2.Add(1) //add count for saving data to db
 		}
 		saveToDbChan <- local_data //push to save data to db
@@ -257,11 +261,11 @@ func (p *parser) ExtractAndLoad(outPutChan <-chan model.Geolocation, invalidCoun
 }
 
 func (p *parser) SaveToDB(savChan <-chan model.Geolocation, wg2 *sync.WaitGroup) {
-	resultSlice := make([]model.Geolocation, 0, 8191) //8191, coz postgres supports 65535 parameters in bulk
+	resultSlice := make([]model.Geolocation, 0, BulkSize) //8191, coz postgres supports 65535 parameters in bulk
 	for data := range savChan {
 
 		resultSlice = append(resultSlice, data)
-		if len(resultSlice) == 8191 {
+		if len(resultSlice) == BulkSize {
 			var local_data []model.Geolocation
 			local_data = append(local_data, resultSlice...)
 			go func() {
