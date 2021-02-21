@@ -5,7 +5,7 @@ This project consistes of two cmponents:
 1) An API which provides the details of an IP address such as city, country, state, its coordinates etc.
 2) An import service which imports the the Geolocation data into the database given a CSV file.
 
-<h1>Installation<h1>
+<h1>Installation</h1>
 
 <h2>Prerequisite:</h2>
 
