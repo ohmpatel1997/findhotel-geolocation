@@ -168,3 +168,21 @@ func RenderJSON(r Response) {
 
 	r.Writer.Write(j)
 }
+
+func GetLogger(r *http.Request) log.Logger {
+	ctx := r.Context()
+
+	l, ok := ctx.Value(loggerKey).(log.Logger)
+
+	//If the logger isn't present in the request(this should never happen)
+	//Let's add a logger to the request, but log a warning
+	if !ok {
+		l = log.NewLogger()
+
+		*r = *addLoggerContextToRequest(l, r)
+
+		l.WarnD("Logger missing from request context", log.Fields{"path": r.URL.Path})
+	}
+
+	return l
+}
